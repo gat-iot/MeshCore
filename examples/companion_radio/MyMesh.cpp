@@ -978,6 +978,37 @@ uint32_t MyMesh::getBLEPin() {
   return _active_ble_pin;
 }
 
+bool MyMesh::sendPublicText(const char *text) {
+  if (text == NULL || text[0] == 0) return false;
+
+  ChannelDetails channel;
+  if (!getChannel(0, channel)) return false;
+
+  uint32_t now = getRTCClock()->getCurrentTime();
+  return sendGroupMessage(now, channel.channel, _prefs.node_name, text, strlen(text));
+}
+
+bool MyMesh::applyRadioParams(float freq, float bw, uint8_t sf, uint8_t cr, uint8_t repeat) {
+  uint32_t freq_khz = (uint32_t)(freq * 1000.0f + 0.5f);
+
+  if (repeat && !isValidClientRepeatFreq(freq_khz)) return false;
+  if (freq < 150.0f || freq > 2500.0f || bw < 7.0f || bw > 500.0f || sf < 5 || sf > 12 || cr < 5 || cr > 8) {
+    return false;
+  }
+
+  _prefs.freq = freq;
+  _prefs.bw = bw;
+  _prefs.sf = sf;
+  _prefs.cr = cr;
+  _prefs.client_repeat = repeat;
+  savePrefs();
+
+  radio_driver.setParams(_prefs.freq, _prefs.bw, _prefs.sf, _prefs.cr);
+  MESH_DEBUG_PRINTLN("OK: applyRadioParams: f=%d, bw=%d, sf=%d, cr=%d",
+                     freq_khz, (uint32_t)(bw * 1000.0f + 0.5f), (uint32_t)sf, (uint32_t)cr);
+  return true;
+}
+
 struct FreqRange {
   uint32_t lower_freq, upper_freq;
 };

@@ -94,6 +94,8 @@ public:
   const char *getNodeName();
   NodePrefs *getNodePrefs();
   uint32_t getBLEPin();
+  bool sendPublicText(const char *text);
+  bool applyRadioParams(float freq, float bw, uint8_t sf, uint8_t cr, uint8_t repeat = 0);
 
   void loop();
   void handleCmdFrame(size_t len);

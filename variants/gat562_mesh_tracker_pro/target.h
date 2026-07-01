@@ -13,6 +13,8 @@
   extern DISPLAY_CLASS display;
   #include <helpers/ui/MomentaryButton.h>
   extern MomentaryButton user_btn;
+  extern MomentaryButton joystick_up;
+  extern MomentaryButton joystick_down;
   extern MomentaryButton joystick_left;
   extern MomentaryButton joystick_right;
   extern MomentaryButton back_btn;

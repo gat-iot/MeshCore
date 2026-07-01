@@ -72,8 +72,60 @@ static uint32_t _atoi(const char* sp) {
   #endif
 #elif defined(NRF52_PLATFORM)
   #ifdef BLE_PIN_CODE
+    #include <helpers/ArduinoSerialInterface.h>
     #include <helpers/nrf52/SerialBLEInterface.h>
-    SerialBLEInterface serial_interface;
+
+    class DualSerialInterface : public BaseSerialInterface {
+      ArduinoSerialInterface _usb;
+      SerialBLEInterface _ble;
+
+    public:
+      void begin(Stream& serial, const char* prefix, char* name, uint32_t pin_code) {
+        _usb.begin(serial);
+        _ble.begin(prefix, name, pin_code);
+      }
+
+      void enable() override {
+        _usb.enable();
+        _ble.enable();
+      }
+
+      void disable() override {
+        _ble.disable();
+      }
+
+      bool isEnabled() const override {
+        return _ble.isEnabled();
+      }
+
+      bool isConnected() const override {
+        return _ble.isConnected();
+      }
+
+      bool isWriteBusy() const override {
+        return _ble.isWriteBusy();
+      }
+
+      size_t writeFrame(const uint8_t src[], size_t len) override {
+        size_t written = 0;
+        if (_usb.isEnabled()) {
+          written = _usb.writeFrame(src, len);
+        }
+        if (_ble.isEnabled()) {
+          size_t ble_written = _ble.writeFrame(src, len);
+          if (ble_written > written) written = ble_written;
+        }
+        return written;
+      }
+
+      size_t checkRecvFrame(uint8_t dest[]) override {
+        size_t len = _ble.checkRecvFrame(dest);
+        if (len > 0) return len;
+        return _usb.checkRecvFrame(dest);
+      }
+    };
+
+    DualSerialInterface serial_interface;
   #else
     #include <helpers/ArduinoSerialInterface.h>
     ArduinoSerialInterface serial_interface;
@@ -157,7 +209,7 @@ void setup() {
   );
 
 #ifdef BLE_PIN_CODE
-  serial_interface.begin(BLE_NAME_PREFIX, the_mesh.getNodePrefs()->node_name, the_mesh.getBLEPin());
+  serial_interface.begin(Serial, BLE_NAME_PREFIX, the_mesh.getNodePrefs()->node_name, the_mesh.getBLEPin());
 #else
   serial_interface.begin(Serial);
 #endif

@@ -212,7 +212,7 @@ extern "C"
 #define GPS_THREAD_INTERVAL     50
 #define PIN_GPS_TX              PIN_SERIAL1_RX
 #define PIN_GPS_RX              PIN_SERIAL1_TX
-#define PIN_GPS_EN              (33)
+#define PIN_GPS_EN              (34)
 #define PIN_GPS_PPS             (17)
 
 #ifdef __cplusplus
