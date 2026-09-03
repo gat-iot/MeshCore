@@ -22,6 +22,13 @@
 #include "../AbstractUITask.h"
 #include "../NodePrefs.h"
 
+#define UI_PRESET_MSG_COUNT 20
+#define UI_PRESET_MSG_BYTES 40
+
+#ifdef CASTLEBOY_GAME
+  #include <CastleBoyApp.h>
+#endif
+
 class UITask : public AbstractUITask {
   DisplayDriver* _display;
   SensorManager* _sensors;
@@ -51,15 +58,27 @@ class UITask : public AbstractUITask {
   UIScreen* splash;
   UIScreen* home;
   UIScreen* msg_preview;
+  UIScreen* composer;
   UIScreen* curr;
 
+  char _preset_msgs[UI_PRESET_MSG_COUNT][UI_PRESET_MSG_BYTES + 1];
+
+#ifdef CASTLEBOY_GAME
+  bool _game_active = false;
+  uint32_t _game_next_frame = 0;
+  uint32_t _game_exit_started = 0;
+  void runGame();
+#endif
+
   void userLedHandler();
+  void loadPresetMessages();
+  bool persistPresetMessages();
 
   // Button action handlers
-  char checkDisplayOn(char c);
-  char handleLongPress(char c);
-  char handleDoubleClick(char c);
-  char handleTripleClick(char c);
+  int checkDisplayOn(int c);
+  int handleLongPress(int c);
+  int handleDoubleClick(int c);
+  int handleTripleClick(int c);
 
   void setCurrScreen(UIScreen* c);
 
@@ -73,6 +92,14 @@ public:
   void begin(DisplayDriver* display, SensorManager* sensors, NodePrefs* node_prefs);
 
   void gotoHomeScreen() { setCurrScreen(home); }
+  void openMsgPreview();
+  void openComposer();
+  void openPresetEditor(uint8_t idx);
+  void sendComposedPublicText(const char* text);
+  void sendPresetPublicText(uint8_t idx);
+  void savePresetMessage(uint8_t idx, const char* text);
+  const char* getPresetMessage(uint8_t idx) const;
+  uint8_t getPresetMessageCount() const { return UI_PRESET_MSG_COUNT; }
   void showAlert(const char* text, int duration_millis);
   int  getMsgCount() const { return _msgcount; }
   bool hasDisplay() const { return _display != NULL; }

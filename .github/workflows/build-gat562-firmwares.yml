@@ -1,0 +1,101 @@
+name: Build GAT562 Firmwares
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - model: MeshCore_GAT562_Family
+            environment: GAT562_Mesh_Tracker_Pro_companion_radio_ble
+            t9: false
+          - model: MeshCore_GAT562_T9
+            environment: GAT562_Mesh_Tracker_Pro_T9_companion_radio_ble
+            t9: true
+
+    name: ${{ matrix.model }}
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v6
+
+      - name: Setup build environment
+        uses: ./.github/actions/setup-build-environment
+
+      - name: Build firmware
+        run: pio run -e "${{ matrix.environment }}"
+
+      - name: Verify and package firmware
+        env:
+          BUILD_ENV: ${{ matrix.environment }}
+          MODEL: ${{ matrix.model }}
+          T9_ENABLED: ${{ matrix.t9 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          build_dir=".pio/build/${BUILD_ENV}"
+          output_dir="out/${MODEL}"
+          symbols="${RUNNER_TEMP}/${MODEL}.symbols"
+          firmware_bin="${RUNNER_TEMP}/${MODEL}.bin"
+          nm_bin="$(find "${HOME}/.platformio/packages" -name arm-none-eabi-nm -print -quit)"
+
+          mkdir -p "${output_dir}"
+          test -n "${nm_bin}"
+
+          "${nm_bin}" -C "${build_dir}/firmware.elf" > "${symbols}"
+
+          unzip -p "${build_dir}/firmware.zip" firmware.bin > "${firmware_bin}"
+          python bin/uf2conv/uf2conv.py \
+            -f 0xADA52840 \
+            -c "${build_dir}/firmware.hex" \
+            -o "${output_dir}/${MODEL}.uf2"
+          cp "${build_dir}/firmware.zip" "${output_dir}/${MODEL}_OTA.zip"
+
+          require_symbol() {
+            if ! grep -Fq "$1" "${symbols}"; then
+              echo "Missing required firmware symbol: $1"
+              grep -Ei "tinyusb|tud_|usbd_cdc|gat562t9" "${symbols}" | head -n 100 || true
+              return 1
+            fi
+          }
+
+          require_symbol "TinyUSB_Device_Init"
+          require_symbol "tud_descriptor_device_cb"
+          require_symbol "Adafruit_USBD_CDC::begin"
+
+          if [[ "${T9_ENABLED}" == "true" ]]; then
+            require_symbol "GAT562T9Keyboard::poll"
+          elif grep -Fq "GAT562T9Keyboard::poll" "${symbols}"; then
+            echo "Unexpected T9 keyboard code in family firmware"
+            exit 1
+          fi
+
+          python - "${firmware_bin}" <<'PY'
+          import pathlib
+          import sys
+
+          data = pathlib.Path(sys.argv[1]).read_bytes()
+          assert b"\x12\x01\x00\x02" in data, "USB device descriptor is missing"
+          assert b"\x9a\x23\x29\x80" in data, "USB VID/PID is missing"
+          PY
+
+          python bin/uf2conv/uf2conv.py -i "${output_dir}/${MODEL}.uf2"
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.model }}
+          path: out/${{ matrix.model }}
+          if-no-files-found: error
+          retention-days: 30

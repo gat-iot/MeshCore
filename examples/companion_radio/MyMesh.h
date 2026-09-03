@@ -94,6 +94,7 @@ public:
   const char *getNodeName();
   NodePrefs *getNodePrefs();
   uint32_t getBLEPin();
+  bool sendPublicText(const char *text);
 
   void loop();
   void handleCmdFrame(size_t len);

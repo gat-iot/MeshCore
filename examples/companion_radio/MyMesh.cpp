@@ -992,6 +992,16 @@ uint32_t MyMesh::getBLEPin() {
   return _active_ble_pin;
 }
 
+bool MyMesh::sendPublicText(const char *text) {
+  if (text == NULL || text[0] == 0) return false;
+
+  ChannelDetails channel;
+  if (!getChannel(0, channel)) return false;
+
+  uint32_t now = getRTCClock()->getCurrentTime();
+  return sendGroupMessage(now, channel.channel, _prefs.node_name, text, strlen(text));
+}
+
 struct FreqRange {
   uint32_t lower_freq, upper_freq;
 };
