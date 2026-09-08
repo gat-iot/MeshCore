@@ -89,6 +89,7 @@ class UITask : public AbstractUITask {
   bool _alarm_editing = false, _alarm_quiet = false, _alarm_armed = false;
   uint8_t _alarm_slot = 0, _alarm_field = 0, _alarm_ringing = 0, _alarm_snoozed = 0;
   uint32_t _alarm_started = 0, _alarm_snooze_at = 0, _alarm_refresh = 0;
+  uint32_t _alarm_check = 0, _alarm_epoch = 0;
   void loadAlarms();
   bool saveAlarms(const GAT562Alarm::Settings& settings);
   bool pollAlarms();

@@ -49,7 +49,7 @@ void UITask::openAlarms() {
   _alarm_draft = _alarms;
   _alarm_editing = true;
   _alarm_field = 0;
-  _alarm_refresh = 0;
+  _alarm_refresh = millis();
 }
 
 void UITask::stopAlarm(bool snooze) {
@@ -68,12 +68,21 @@ void UITask::stopAlarm(bool snooze) {
 #endif
   _auto_off = millis() + AUTO_OFF_MILLIS;
   _next_refresh = 0;
-  _alarm_refresh = 0;
+  _alarm_refresh = millis();
 }
 
 bool UITask::pollAlarms() {
   const uint32_t now = millis();
-  uint8_t due = GAT562Alarm::due(_alarms, rtc_clock.getCurrentTime(), rtc_clock.isTimeSynchronized());
+  uint8_t due = 0;
+  if (GAT562Alarm::elapsed(now, _alarm_check)) {
+    _alarm_check = now + 500;
+    bool needs_clock = _alarm_ringing || _alarm_snoozed;
+    for (const auto& e : _alarms.entries) needs_clock |= e.enabled != 0;
+    if (needs_clock && rtc_clock.isTimeSynchronized()) {
+      _alarm_epoch = rtc_clock.getCurrentTime();
+      due = GAT562Alarm::due(_alarms, _alarm_epoch, true);
+    }
+  }
   if (due) {
     // Persist one-shot disable and fired dates, never write on ordinary clock ticks.
     if (!saveAlarms(_alarms)) showAlert(GAT562CHUI::SAVE_FAILED, 3000);
@@ -101,7 +110,7 @@ bool UITask::pollAlarms() {
 #endif
     }
     _alarm_ringing |= due;
-    _alarm_refresh = 0;
+    _alarm_refresh = now;
   }
   if (!_alarm_ringing && !_alarm_editing) return false;
 
@@ -141,7 +150,7 @@ bool UITask::pollAlarms() {
     if (!buzzer.isPlaying()) buzzer.play("Alarm:d=8,o=6,b=140:c,e,g,p,c,e,g,4p");
     buzzer.loop();
 #endif
-    if (_display) _display->turnOn();
+    if (_display && !_display->isOn()) _display->turnOn();
     _auto_off = now + AUTO_OFF_MILLIS;
   } else {
     if (key) key = checkDisplayOn(key);
@@ -179,7 +188,7 @@ bool UITask::pollAlarms() {
 #ifdef PIN_BUZZER
     buzzer.loop();
 #endif
-    if (key) _alarm_refresh = 0;
+    if (key) _alarm_refresh = now;
   }
   userLedHandler();
 #ifdef PIN_VIBRATION
@@ -195,7 +204,7 @@ bool UITask::pollAlarms() {
       snprintf(text, sizeof(text), "%s %s%s%s", GAT562CHUI::ALARM,
         _alarm_ringing & 1 ? "1 " : "", _alarm_ringing & 2 ? "2 " : "", _alarm_ringing & 4 ? "3" : "");
       d.drawTextCentered(64, 2, text);
-      const uint32_t local = rtc_clock.getCurrentTime() + (int(_alarms.timezone)-12)*3600;
+      const uint32_t local = _alarm_epoch + (int(_alarms.timezone)-12)*3600;
       snprintf(text, sizeof(text), "%02u:%02u", unsigned(local / 3600 % 24), unsigned(local / 60 % 60));
       d.setTextSize(2); d.drawTextCentered(64, 18, text); d.setTextSize(1);
       d.drawTextCentered(64, 40, GAT562CHUI::ALARM_STOP);
@@ -215,7 +224,7 @@ bool UITask::pollAlarms() {
     d.endFrame();
     _alarm_refresh = now + 250;
   }
-  if (!_alarm_ringing && _display && GAT562Alarm::elapsed(now, _auto_off)) _display->turnOff();
+  if (!_alarm_ringing && _display && _display->isOn() && GAT562Alarm::elapsed(now, _auto_off)) _display->turnOff();
   return true;
 }
 #endif
