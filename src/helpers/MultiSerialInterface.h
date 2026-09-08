@@ -90,6 +90,20 @@ public:
     return false; 
   }
 
+  bool isInterfaceConnected(InterfaceType type) const {
+    if(!_enabled){
+      return false;
+    }
+
+    for(auto iface : _interfaces){
+      if(iface.instance && iface.type == type && iface.instance->isConnected()){
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   // enable all interfaces
   void enable() override {
     _enabled = true;

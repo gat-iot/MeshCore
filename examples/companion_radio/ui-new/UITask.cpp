@@ -360,7 +360,7 @@ public:
         display.setTextSize(1);
         display.drawTextCentered(display.width() / 2, 54, tmp);
       #endif
-      if (_task->hasConnection()) {
+      if (_task->hasBluetoothConnection()) {
         display.setColor(UIColor::warning_txt);
         display.setTextSize(1);
         display.drawTextCentered(display.width() / 2, 43, "< Connected >");
