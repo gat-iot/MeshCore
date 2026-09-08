@@ -1250,7 +1250,7 @@ void MyMesh::handleCmdFrame(size_t len) {
     uint32_t curr = getRTCClock()->getCurrentTime();
     if (secs >= curr) {
       getRTCClock()->setCurrentTime(secs);
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
       getRTCClock()->markTimeSynchronized();
 #endif
       writeOKFrame();

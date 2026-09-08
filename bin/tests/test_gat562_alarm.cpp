@@ -1,8 +1,31 @@
 #include "../../examples/companion_radio/ui-new/GAT562Alarm.h"
+#include "../../examples/companion_radio/ui-new/GAT562AlarmText.h"
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 using namespace GAT562Alarm;
+static void testLabels() {
+  using namespace GAT562AlarmText;
+  const char* labels[] = { ALARM, ALARM_SAVED, SAVE_FAILED, ALARM_OPEN,
+    ALARM_READY, ALARM_WAIT, ALARM_SAVE, ALARM_STOP, ALARM_SNOOZE,
+    ALARM_ENABLED, ALARM_DISABLED, ALARM_REPEAT[0], ALARM_REPEAT[1], ALARM_REPEAT[2] };
+  for (const char* label : labels) {
+    unsigned width = 0;
+    for (const unsigned char* p = reinterpret_cast<const unsigned char*>(label); *p; ++p) {
+      if (*p < 128) width += 6;
+      else if ((*p & 0xc0) != 0x80) width += 10;
+    }
+    assert(width + 6 <= 128); // Reserve space for a selection marker.
+  }
+#ifndef GAT562_CH_UI
+  assert(strcmp(ALARM, "Alarm") == 0);
+  assert(strcmp(ALARM_REPEAT[2], "Weekdays") == 0);
+#else
+  assert(strcmp(ALARM, GAT562CHUI::ALARM) == 0);
+#endif
+}
 int main() {
+  testLabels();
   Settings s;
   // 2024-01-01 Monday, 00:00 UTC / 08:00 UTC+8.
   const uint32_t monday = 1704067200UL;

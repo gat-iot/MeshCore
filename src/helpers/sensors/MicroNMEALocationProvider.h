@@ -154,7 +154,7 @@ public :
             if (_time_sync_needed && time_valid > 2) {
                 if (_clock != NULL) {
                     _clock->setCurrentTime(getTimestamp());
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
                     _clock->markTimeSynchronized();
 #endif
                     _time_sync_needed = false;

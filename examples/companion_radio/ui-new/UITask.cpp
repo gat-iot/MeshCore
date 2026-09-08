@@ -2,6 +2,9 @@
 #include <helpers/TxtDataHelpers.h>
 #include "../MyMesh.h"
 #include "target.h"
+#ifdef GAT562_ALARM
+  #include "GAT562AlarmText.h"
+#endif
 #ifdef GAT562_CH_UI
   #include "GAT562CHUI.h"
   #include <pinyin_simple_backend.h>
@@ -232,7 +235,7 @@ class HomeScreen : public UIScreen {
     SENSORS,
 #endif
     CLOCK,
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
     ALARM,
 #endif
     SHUTDOWN,
@@ -321,7 +324,7 @@ class HomeScreen : public UIScreen {
 public:
   HomeScreen(UITask* task, mesh::RTCClock* rtc, SensorManager* sensors, NodePrefs* node_prefs)
      : _task(task), _rtc(rtc), _sensors(sensors), _node_prefs(node_prefs), _page(0),
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
        _tz_idx(task->alarmTimezone()),
 #else
        _tz_idx(defaultTimezoneIndex()),
@@ -616,13 +619,13 @@ public:
       display.setColor(UIColor::secondary_txt);
       snprintf(tmp, sizeof(tmp), ":%02u", clock.second);
       display.drawTextCentered(display.width() / 2, 54, tmp);
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
     } else if (_page == HomePage::ALARM) {
       display.setTextSize(1);
       display.setColor(UIColor::primary_txt);
-      display.drawTextCentered(64, 20, GAT562CHUI::ALARM);
-      display.drawTextCentered(64, 34, _rtc->isTimeSynchronized() ? GAT562CHUI::ALARM_READY : GAT562CHUI::ALARM_WAIT);
-      display.drawTextCentered(64, 50, GAT562CHUI::ALARM_OPEN);
+      display.drawTextCentered(64, 20, GAT562AlarmText::ALARM);
+      display.drawTextCentered(64, 34, _rtc->isTimeSynchronized() ? GAT562AlarmText::ALARM_READY : GAT562AlarmText::ALARM_WAIT);
+      display.drawTextCentered(64, 50, GAT562AlarmText::ALARM_OPEN);
 #endif
     } else if (_page == HomePage::SHUTDOWN) {
       display.setColor(UIColor::corp_blue);
@@ -640,7 +643,7 @@ public:
   }
 
   bool handleInput(int c) override {
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
     if (_page == HomePage::ALARM && (c == KEY_ENTER || c == KEY_SELECT)) {
       _task->openAlarms();
       return true;
@@ -648,14 +651,14 @@ public:
 #endif
     if (_page == HomePage::CLOCK && c == KEY_UP) {
       _tz_idx = (_tz_idx + TIMEZONE_OPTION_COUNT - 1) % TIMEZONE_OPTION_COUNT;
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
       if (!_task->setAlarmTimezone(_tz_idx)) _tz_idx = _task->alarmTimezone();
 #endif
       return true;
     }
     if (_page == HomePage::CLOCK && c == KEY_DOWN) {
       _tz_idx = (_tz_idx + 1) % TIMEZONE_OPTION_COUNT;
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
       if (!_task->setAlarmTimezone(_tz_idx)) _tz_idx = _task->alarmTimezone();
 #endif
       return true;
@@ -1616,7 +1619,7 @@ void UITask::begin(DisplayDriver* display, SensorManager* sensors, NodePrefs* no
 
   _node_prefs = node_prefs;
   loadPresetMessages();
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
   loadAlarms();
 #endif
 
@@ -1710,7 +1713,7 @@ void UITask::showAlert(const char* text, int duration_millis) {
 }
 
 void UITask::notify(UIEventType t) {
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
   if (_alarm_ringing) return;
 #endif
 #if defined(PIN_BUZZER)
@@ -1864,7 +1867,7 @@ void UITask::runGame() {
 #endif
 
 void UITask::loop() {
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
   if (!pollAlarms()) {
 #endif
 #ifdef CASTLEBOY_GAME
@@ -2071,7 +2074,7 @@ void UITask::loop() {
   vibration.loop();
 #endif
 
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
   }
 #endif
 #ifdef AUTO_SHUTDOWN_MILLIVOLTS

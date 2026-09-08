@@ -43,6 +43,8 @@ jobs:
         run: |
           g++ -std=c++11 -Wall -Wextra -Werror -fsanitize=address,undefined bin/tests/test_gat562_alarm.cpp -o /tmp/test_gat562_alarm
           /tmp/test_gat562_alarm
+          g++ -std=c++11 -Wall -Wextra -Werror -fsanitize=address,undefined -DGAT562_CH_UI=1 bin/tests/test_gat562_alarm.cpp -o /tmp/test_gat562_alarm_ch
+          /tmp/test_gat562_alarm_ch
 
       - name: Setup build environment
         uses: ./.github/actions/setup-build-environment
@@ -89,6 +91,7 @@ jobs:
           require_symbol "TinyUSB_Device_Init"
           require_symbol "tud_descriptor_device_cb"
           require_symbol "Adafruit_USBD_CDC::begin"
+          require_symbol "UITask::pollAlarms"
 
           if [[ "${T9_ENABLED}" == "true" ]]; then
             require_symbol "GAT562T9Keyboard::poll"
@@ -98,10 +101,9 @@ jobs:
           fi
 
           if [[ "${CH_ENABLED}" == "true" ]]; then
-            require_symbol "UITask::pollAlarms"
             require_symbol "pinyin_simple_search"
             require_symbol "utf8_10x10_map"
-          elif grep -Eq "pinyin_simple_search|utf8_10x10_map|UITask::pollAlarms" "${symbols}"; then
+          elif grep -Eq "pinyin_simple_search|utf8_10x10_map" "${symbols}"; then
             echo "Unexpected Chinese UI code in non-CH firmware"
             exit 1
           fi

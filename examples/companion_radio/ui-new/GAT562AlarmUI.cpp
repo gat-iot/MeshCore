@@ -1,6 +1,6 @@
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
 #include "UITask.h"
-#include "GAT562CHUI.h"
+#include "GAT562AlarmText.h"
 #include "../MyMesh.h"
 #include "target.h"
 
@@ -38,7 +38,7 @@ bool UITask::setAlarmTimezone(uint8_t index) {
   auto next = _alarms;
   next.timezone = index;
   if (!saveAlarms(next)) {
-    showAlert(GAT562CHUI::SAVE_FAILED, 1500);
+    showAlert(GAT562AlarmText::SAVE_FAILED, 1500);
     return false;
   }
   _alarms = next;
@@ -85,7 +85,7 @@ bool UITask::pollAlarms() {
   }
   if (due) {
     // Persist one-shot disable and fired dates, never write on ordinary clock ticks.
-    if (!saveAlarms(_alarms)) showAlert(GAT562CHUI::SAVE_FAILED, 3000);
+    if (!saveAlarms(_alarms)) showAlert(GAT562AlarmText::SAVE_FAILED, 3000);
     for (uint8_t i = 0; i < GAT562Alarm::COUNT; ++i) {
       _alarm_draft.entries[i].firedDay = _alarms.entries[i].firedDay;
       if (due & (1 << i)) _alarm_draft.entries[i].enabled = _alarms.entries[i].enabled;
@@ -164,11 +164,11 @@ bool UITask::pollAlarms() {
         _alarms = _alarm_draft;
         _alarm_snoozed = 0;
         _alarm_editing = false;
-        showAlert(GAT562CHUI::ALARM_SAVED, 1000);
+        showAlert(GAT562AlarmText::ALARM_SAVED, 1000);
       } else {
         // Return to the normal alert renderer without applying unsaved settings.
         _alarm_editing = false;
-        showAlert(GAT562CHUI::SAVE_FAILED, 2000);
+        showAlert(GAT562AlarmText::SAVE_FAILED, 2000);
       }
       _next_refresh = 0;
       return true;
@@ -201,25 +201,25 @@ bool UITask::pollAlarms() {
     d.setTextSize(1);
     d.setColor(UIColor::primary_txt);
     if (_alarm_ringing) {
-      snprintf(text, sizeof(text), "%s %s%s%s", GAT562CHUI::ALARM,
+      snprintf(text, sizeof(text), "%s %s%s%s", GAT562AlarmText::ALARM,
         _alarm_ringing & 1 ? "1 " : "", _alarm_ringing & 2 ? "2 " : "", _alarm_ringing & 4 ? "3" : "");
       d.drawTextCentered(64, 2, text);
       const uint32_t local = _alarm_epoch + (int(_alarms.timezone)-12)*3600;
       snprintf(text, sizeof(text), "%02u:%02u", unsigned(local / 3600 % 24), unsigned(local / 60 % 60));
       d.setTextSize(2); d.drawTextCentered(64, 18, text); d.setTextSize(1);
-      d.drawTextCentered(64, 40, GAT562CHUI::ALARM_STOP);
-      d.drawTextCentered(64, 53, GAT562CHUI::ALARM_SNOOZE);
+      d.drawTextCentered(64, 40, GAT562AlarmText::ALARM_STOP);
+      d.drawTextCentered(64, 53, GAT562AlarmText::ALARM_SNOOZE);
     } else {
       const auto& e = _alarm_draft.entries[_alarm_slot];
-      snprintf(text, sizeof(text), "%c%s %u/3", _alarm_field == 0 ? '>' : ' ', GAT562CHUI::ALARM, _alarm_slot+1);
+      snprintf(text, sizeof(text), "%c%s %u/3", _alarm_field == 0 ? '>' : ' ', GAT562AlarmText::ALARM, _alarm_slot+1);
       d.setCursor(0, 0); d.print(text);
       snprintf(text, sizeof(text), "%c%02u : %c%02u", _alarm_field == 1 ? '>' : ' ', e.hour, _alarm_field == 2 ? '>' : ' ', e.minute);
       d.setCursor(0, 14); d.print(text);
-      snprintf(text, sizeof(text), "%c%s", _alarm_field == 3 ? '>' : ' ', GAT562CHUI::ALARM_REPEAT[e.repeat]);
+      snprintf(text, sizeof(text), "%c%s", _alarm_field == 3 ? '>' : ' ', GAT562AlarmText::ALARM_REPEAT[e.repeat]);
       d.setCursor(0, 27); d.print(text);
-      snprintf(text, sizeof(text), "%c%s", _alarm_field == 4 ? '>' : ' ', e.enabled ? GAT562CHUI::ALARM_ENABLED : GAT562CHUI::ALARM_DISABLED);
+      snprintf(text, sizeof(text), "%c%s", _alarm_field == 4 ? '>' : ' ', e.enabled ? GAT562AlarmText::ALARM_ENABLED : GAT562AlarmText::ALARM_DISABLED);
       d.setCursor(0, 40); d.print(text);
-      d.drawTextCentered(64, 53, GAT562CHUI::ALARM_SAVE);
+      d.drawTextCentered(64, 53, GAT562AlarmText::ALARM_SAVE);
     }
     d.endFrame();
     _alarm_refresh = now + 250;

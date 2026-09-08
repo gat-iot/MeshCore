@@ -1,6 +1,6 @@
-# GAT562 CH Alarm
+# GAT562 Alarm
 
-Available in Family CH and T9 CH. Non-CH builds do not include the alarm module.
+Available in Family, T9, Family CH and T9 CH. All four builds enable `GAT562_ALARM` and share the same scheduling, storage and input logic. `GAT562_CH_UI` selects Chinese alarm text; non-CH builds use English text without Chinese fonts or the pinyin library. Alarm settings use the same storage format across language variants.
 
 ## Controls
 

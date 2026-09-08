@@ -21,7 +21,7 @@
 
 #include "../AbstractUITask.h"
 #include "../NodePrefs.h"
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
 #include "GAT562Alarm.h"
 #endif
 
@@ -84,7 +84,7 @@ class UITask : public AbstractUITask {
   int handleTripleClick(int c);
 
   void setCurrScreen(UIScreen* c);
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
   GAT562Alarm::Settings _alarms, _alarm_draft;
   bool _alarm_editing = false, _alarm_quiet = false, _alarm_armed = false;
   uint8_t _alarm_slot = 0, _alarm_field = 0, _alarm_ringing = 0, _alarm_snoozed = 0;
@@ -104,7 +104,7 @@ public:
     curr = NULL;
   }
   void begin(DisplayDriver* display, SensorManager* sensors, NodePrefs* node_prefs);
-#ifdef GAT562_CH_UI
+#ifdef GAT562_ALARM
   void openAlarms();
   uint8_t alarmTimezone() const { return _alarms.timezone; }
   bool setAlarmTimezone(uint8_t index);
