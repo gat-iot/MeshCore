@@ -1,5 +1,7 @@
 #include "SSD1306Display.h"
-#include "utf8_10x10.h"
+#ifdef GAT562_CH_UI
+  #include "utf8_10x10.h"
+#endif
 
 bool SSD1306Display::i2c_probe(TwoWire& wire, uint8_t addr) {
   wire.beginTransmission(addr);
@@ -98,6 +100,7 @@ uint16_t SSD1306Display::nextCodepoint(const char*& str) {
   return '?';
 }
 
+#ifdef GAT562_CH_UI
 int SSD1306Display::findGlyph(uint16_t codepoint) {
   int lo = 0;
   int hi = utf8_10x10_font.count - 1;
@@ -133,8 +136,10 @@ void SSD1306Display::drawGlyph(int x, int y, uint16_t codepoint) {
     }
   }
 }
+#endif
 
 void SSD1306Display::print(const char* str) {
+#ifdef GAT562_CH_UI
   while (*str) {
     const char* before = str;
     uint16_t cp = nextCodepoint(str);
@@ -153,14 +158,25 @@ void SSD1306Display::print(const char* str) {
       display.setCursor(_cursorX, _cursorY);
     }
   }
+#else
+  display.print(str);
+  _cursorX = display.getCursorX();
+  _cursorY = display.getCursorY();
+#endif
 }
 
 void SSD1306Display::printWordWrap(const char* str, int max_width) {
   int line_start_x = _cursorX;
   while (*str) {
+#ifdef GAT562_CH_UI
     const char* p = str;
     uint16_t cp = nextCodepoint(p);
     int char_w = (cp < 0x80) ? (6 * _textSize) : utf8_10x10_font.w;
+#else
+    const char* p = str + 1;
+    uint16_t cp = (uint8_t)*str;
+    int char_w = 6 * _textSize;
+#endif
     if (cp == '\n') {
       _cursorX = line_start_x;
       _cursorY += 10;
@@ -203,6 +219,7 @@ void SSD1306Display::drawNativeBuffer(const uint8_t* buffer, size_t length) {
 }
 
 uint16_t SSD1306Display::getTextWidth(const char* str) {
+#ifdef GAT562_CH_UI
   uint16_t width = 0;
   while (*str) {
     uint16_t cp = nextCodepoint(str);
@@ -210,6 +227,12 @@ uint16_t SSD1306Display::getTextWidth(const char* str) {
     width += (cp < 0x80) ? (6 * _textSize) : utf8_10x10_font.w;
   }
   return width;
+#else
+  int16_t x1, y1;
+  uint16_t w, h;
+  display.getTextBounds(str, 0, 0, &x1, &y1, &w, &h);
+  return w;
+#endif
 }
 
 void SSD1306Display::endFrame() {

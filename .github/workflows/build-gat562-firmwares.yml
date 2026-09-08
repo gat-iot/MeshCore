@@ -19,9 +19,19 @@ jobs:
           - model: MeshCore_GAT562_Family
             environment: GAT562_Mesh_Tracker_Pro_companion_radio_ble
             t9: false
+            ch: false
+          - model: MeshCore_GAT562_Family_CH
+            environment: GAT562_Mesh_Tracker_Pro_CH_companion_radio_ble
+            t9: false
+            ch: true
           - model: MeshCore_GAT562_T9
             environment: GAT562_Mesh_Tracker_Pro_T9_companion_radio_ble
             t9: true
+            ch: false
+          - model: MeshCore_GAT562_T9_CH
+            environment: GAT562_Mesh_Tracker_Pro_T9_CH_companion_radio_ble
+            t9: true
+            ch: true
 
     name: ${{ matrix.model }}
 
@@ -40,6 +50,7 @@ jobs:
           BUILD_ENV: ${{ matrix.environment }}
           MODEL: ${{ matrix.model }}
           T9_ENABLED: ${{ matrix.t9 }}
+          CH_ENABLED: ${{ matrix.ch }}
         shell: bash
         run: |
           set -euo pipefail
@@ -78,6 +89,14 @@ jobs:
             require_symbol "GAT562T9Keyboard::poll"
           elif grep -Fq "GAT562T9Keyboard::poll" "${symbols}"; then
             echo "Unexpected T9 keyboard code in family firmware"
+            exit 1
+          fi
+
+          if [[ "${CH_ENABLED}" == "true" ]]; then
+            require_symbol "pinyin_simple_search"
+            require_symbol "utf8_10x10_map"
+          elif grep -Eq "pinyin_simple_search|utf8_10x10_map" "${symbols}"; then
+            echo "Unexpected Chinese UI code in non-CH firmware"
             exit 1
           fi
 

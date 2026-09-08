@@ -2,7 +2,13 @@
 #include <helpers/TxtDataHelpers.h>
 #include "../MyMesh.h"
 #include "target.h"
-#include <pinyin_simple_backend.h>
+#ifdef GAT562_CH_UI
+  #include "GAT562CHUI.h"
+  #include <pinyin_simple_backend.h>
+  #define UI_TEXT(name, fallback) GAT562CHUI::name
+#else
+  #define UI_TEXT(name, fallback) fallback
+#endif
 #ifdef WIFI_SSID
   #include <WiFi.h>
 #endif
@@ -31,10 +37,15 @@ extern DataStore store;
   #define UI_RECENT_LIST_SIZE 4
 #endif
 
-#if UI_HAS_JOYSTICK
-  #define PRESS_LABEL "press Enter"
+#ifdef GAT562_CH_UI
+  #define UI_ADVERT_ACTION GAT562CHUI::ADVERT_ACTION
+  #define UI_HIBERNATE_ACTION GAT562CHUI::HIBERNATE
+#elif UI_HAS_JOYSTICK
+  #define UI_ADVERT_ACTION "advert: press Enter"
+  #define UI_HIBERNATE_ACTION "hibernate:press Enter"
 #else
-  #define PRESS_LABEL "long press"
+  #define UI_ADVERT_ACTION "advert: long press"
+  #define UI_HIBERNATE_ACTION "hibernate:long press"
 #endif
 
 static const char* PRESET_MSG_STORE_FILE = "/ui_presets";
@@ -351,7 +362,7 @@ public:
     if (_page == HomePage::FIRST) {
       display.setColor(UIColor::primary_txt);
       display.setTextSize(2);
-      sprintf(tmp, "MSG: %d", _task->getMsgCount());
+      sprintf(tmp, UI_TEXT(MESSAGE_COUNT_FORMAT, "MSG: %d"), _task->getMsgCount());
       display.drawTextCentered(display.width() / 2, 22, tmp);
 
       #ifdef WIFI_SSID
@@ -363,11 +374,11 @@ public:
       if (_task->hasBluetoothConnection()) {
         display.setColor(UIColor::warning_txt);
         display.setTextSize(1);
-        display.drawTextCentered(display.width() / 2, 43, "< Connected >");
+        display.drawTextCentered(display.width() / 2, 43, UI_TEXT(CONNECTED, "< Connected >"));
       } else if (the_mesh.getBLEPin() != 0) { // BT pin
         display.setColor(UIColor::warning_txt);
         display.setTextSize(2);
-        sprintf(tmp, "Pin:%06lu", (unsigned long)the_mesh.getBLEPin());
+        sprintf(tmp, UI_TEXT(PAIRING_PIN_FORMAT, "Pin:%06lu"), (unsigned long)the_mesh.getBLEPin());
         display.drawTextCentered(display.width() / 2, 43, tmp);
       }
     } else if (_page == HomePage::RECENT) {
@@ -379,11 +390,11 @@ public:
         if (a->name[0] == 0) continue;  // empty slot
         int secs = _rtc->getCurrentTime() - a->recv_timestamp;
         if (secs < 60) {
-          sprintf(tmp, "%ds", secs);
+          sprintf(tmp, UI_TEXT(SECONDS_FORMAT, "%ds"), secs);
         } else if (secs < 60*60) {
-          sprintf(tmp, "%dm", secs / 60);
+          sprintf(tmp, UI_TEXT(MINUTES_FORMAT, "%dm"), secs / 60);
         } else {
-          sprintf(tmp, "%dh", secs / (60*60));
+          sprintf(tmp, UI_TEXT(HOURS_FORMAT, "%dh"), secs / (60*60));
         }
 
         int timestamp_width = display.getTextWidth(tmp);
@@ -412,7 +423,7 @@ public:
       sprintf(tmp, "TX: %ddBm", _node_prefs->tx_power_dbm);
       display.print(tmp);
       display.setCursor(0, 53);
-      sprintf(tmp, "Noise floor: %d", radio_driver.getNoiseFloor());
+      sprintf(tmp, UI_TEXT(NOISE_FLOOR_FORMAT, "Noise floor: %d"), radio_driver.getNoiseFloor());
       display.print(tmp);
     } else if (_page == HomePage::BLUETOOTH) {
       display.setColor(UIColor::corp_blue);
@@ -421,17 +432,19 @@ public:
           32, 32);
       display.setColor(UIColor::secondary_txt);
       display.setTextSize(1);
-      display.drawTextCentered(display.width() / 2, 64 - 11, _task->isBluetoothEnabled() ? "Bluetooth On" : "Bluetooth Off");
+      display.drawTextCentered(display.width() / 2, 64 - 11,
+          _task->isBluetoothEnabled() ? UI_TEXT(BLUETOOTH_ON, "Bluetooth On") : UI_TEXT(BLUETOOTH_OFF, "Bluetooth Off"));
     } else if (_page == HomePage::ADVERT) {
       display.setColor(UIColor::corp_blue);
       display.drawXbm((display.width() - 32) / 2, 18, advert_icon, 32, 32);
       display.setColor(UIColor::secondary_txt);
-      display.drawTextCentered(display.width() / 2, 64 - 11, "advert: " PRESS_LABEL);
+      display.drawTextCentered(display.width() / 2, 64 - 11, UI_ADVERT_ACTION);
     } else if (_page == HomePage::COMPOSE) {
       display.setTextSize(1);
       if (_compose_presets) {
         display.setColor(UIColor::warning_txt);
-        snprintf(tmp, sizeof(tmp), "Preset %u/%u", (unsigned)(_preset_idx + 1), (unsigned)_task->getPresetMessageCount());
+        snprintf(tmp, sizeof(tmp), UI_TEXT(PRESET_FORMAT, "Preset %u/%u"),
+            (unsigned)(_preset_idx + 1), (unsigned)_task->getPresetMessageCount());
         display.drawTextCentered(display.width() / 2, 18, tmp);
 
         const char* msg = _task->getPresetMessage(_preset_idx);
@@ -440,18 +453,18 @@ public:
           display.setCursor(0, 31);
           display.printWordWrap(msg, display.width());
         } else {
-          display.drawTextCentered(display.width() / 2, 34, "(empty)");
+          display.drawTextCentered(display.width() / 2, 34, UI_TEXT(EMPTY, "(empty)"));
         }
         display.setColor(UIColor::secondary_txt);
-        display.drawTextCentered(display.width() / 2, 64 - 9, "Enter send  Hold edit");
+        display.drawTextCentered(display.width() / 2, 64 - 9, UI_TEXT(ENTER_SEND_HOLD_EDIT, "Enter send  Hold edit"));
       } else {
         display.setColor(UIColor::warning_txt);
         display.setTextSize(2);
-        display.drawTextCentered(display.width() / 2, 22, "Compose");
+        display.drawTextCentered(display.width() / 2, 22, UI_TEXT(COMPOSE, "Compose"));
         display.setColor(UIColor::secondary_txt);
         display.setTextSize(1);
-        display.drawTextCentered(display.width() / 2, 43, "To: Public");
-        display.drawTextCentered(display.width() / 2, 64 - 11, "Down presets");
+        display.drawTextCentered(display.width() / 2, 43, UI_TEXT(TO_PUBLIC, "To: Public"));
+        display.drawTextCentered(display.width() / 2, 64 - 11, UI_TEXT(DOWN_PRESETS, "Down presets"));
       }
 #if ENV_INCLUDE_GPS == 1
     } else if (_page == HomePage::GPS) {
@@ -463,39 +476,39 @@ public:
 #ifdef PIN_GPS_SWITCH
       bool hw_gps_state = digitalRead(PIN_GPS_SWITCH);
       if (gps_state != hw_gps_state) {
-        strcpy(buf, gps_state ? "gps off(hw)" : "gps off(sw)");
+        strcpy(buf, gps_state ? UI_TEXT(GPS_OFF_HW, "gps off(hw)") : UI_TEXT(GPS_OFF_SW, "gps off(sw)"));
       } else {
-        strcpy(buf, gps_state ? "gps on" : "gps off");
+        strcpy(buf, gps_state ? UI_TEXT(GPS_ON, "gps on") : UI_TEXT(GPS_OFF, "gps off"));
       }
 #else
-      strcpy(buf, gps_state ? "gps on" : "gps off");
+      strcpy(buf, gps_state ? UI_TEXT(GPS_ON, "gps on") : UI_TEXT(GPS_OFF, "gps off"));
 #endif
       display.setColor(UIColor::primary_txt);
       display.drawTextLeftAlign(0, y, buf);
       if (nmea == NULL) {
         y = y + 12;
         display.setColor(UIColor::secondary_txt);
-        display.drawTextLeftAlign(0, y, "Can't access GPS");
+        display.drawTextLeftAlign(0, y, UI_TEXT(GPS_UNAVAILABLE, "Can't access GPS"));
       } else {
         display.setColor(UIColor::primary_txt);
-        strcpy(buf, nmea->isValid()?"fix":"no fix");
+        strcpy(buf, nmea->isValid() ? UI_TEXT(GPS_FIXED, "fix") : UI_TEXT(GPS_NO_FIX, "no fix"));
         display.drawTextRightAlign(display.width()-1, y, buf);
         y = y + 12;
         display.setColor(UIColor::secondary_txt);
-        display.drawTextLeftAlign(0, y, "sat");
+        display.drawTextLeftAlign(0, y, UI_TEXT(SATELLITES, "sat"));
         display.setColor(UIColor::primary_txt);
         sprintf(buf, "%d", nmea->satellitesCount());
         display.drawTextRightAlign(display.width()-1, y, buf);
         y = y + 12;
         display.setColor(UIColor::secondary_txt);
-        display.drawTextLeftAlign(0, y, "pos");
+        display.drawTextLeftAlign(0, y, UI_TEXT(POSITION, "pos"));
         display.setColor(UIColor::primary_txt);
         sprintf(buf, "%.4f %.4f",
           nmea->getLatitude()/1000000., nmea->getLongitude()/1000000.);
         display.drawTextRightAlign(display.width()-1, y, buf);
         y = y + 12;
         display.setColor(UIColor::secondary_txt);
-        display.drawTextLeftAlign(0, y, "alt");
+        display.drawTextLeftAlign(0, y, UI_TEXT(ALTITUDE, "alt"));
         display.setColor(UIColor::primary_txt);
         sprintf(buf, "%.2f", nmea->getAltitude()/1000.);
         display.drawTextRightAlign(display.width()-1, y, buf);
@@ -529,39 +542,39 @@ public:
           case LPP_GPS: // GPS
             float lat, lon, alt;
             r.readGPS(lat, lon, alt);
-            strcpy(name, "gps"); sprintf(buf, "%.4f %.4f", lat, lon);
+            strcpy(name, UI_TEXT(POSITION, "gps")); sprintf(buf, "%.4f %.4f", lat, lon);
             break;
           case LPP_VOLTAGE:
             r.readVoltage(v);
-            strcpy(name, "voltage"); sprintf(buf, "%6.2f", v);
+            strcpy(name, UI_TEXT(VOLTAGE, "voltage")); sprintf(buf, "%6.2f", v);
             break;
           case LPP_CURRENT:
             r.readCurrent(v);
-            strcpy(name, "current"); sprintf(buf, "%.3f", v);
+            strcpy(name, UI_TEXT(CURRENT, "current")); sprintf(buf, "%.3f", v);
             break;
           case LPP_TEMPERATURE:
             r.readTemperature(v);
-            strcpy(name, "temperature"); sprintf(buf, "%.2f", v);
+            strcpy(name, UI_TEXT(TEMPERATURE, "temperature")); sprintf(buf, "%.2f", v);
             break;
           case LPP_RELATIVE_HUMIDITY:
             r.readRelativeHumidity(v);
-            strcpy(name, "humidity"); sprintf(buf, "%.2f", v);
+            strcpy(name, UI_TEXT(HUMIDITY, "humidity")); sprintf(buf, "%.2f", v);
             break;
           case LPP_BAROMETRIC_PRESSURE:
             r.readPressure(v);
-            strcpy(name, "pressure"); sprintf(buf, "%.2f", v);
+            strcpy(name, UI_TEXT(PRESSURE, "pressure")); sprintf(buf, "%.2f", v);
             break;
           case LPP_ALTITUDE:
             r.readAltitude(v);
-            strcpy(name, "altitude"); sprintf(buf, "%.0f", v);
+            strcpy(name, UI_TEXT(ALTITUDE, "altitude")); sprintf(buf, "%.0f", v);
             break;
           case LPP_POWER:
             r.readPower(v);
-            strcpy(name, "power"); sprintf(buf, "%6.2f", v);
+            strcpy(name, UI_TEXT(POWER, "power")); sprintf(buf, "%6.2f", v);
             break;
           default:
             r.skipData(type);
-            strcpy(name, "unk"); sprintf(buf, "");
+            strcpy(name, UI_TEXT(UNKNOWN, "unk")); sprintf(buf, "");
         }
         display.setCursor(0, y);
         display.setColor(UIColor::secondary_txt);
@@ -601,11 +614,11 @@ public:
       display.setTextSize(1);
       if (_shutdown_init) {
         display.setColor(UIColor::warning_txt);
-        display.drawTextCentered(display.width() / 2, 34, "hibernating...");
+        display.drawTextCentered(display.width() / 2, 34, UI_TEXT(HIBERNATING, "hibernating..."));
       } else {
         display.setColor(UIColor::secondary_txt);
         display.drawXbm((display.width() - 32) / 2, 18, power_icon, 32, 32);
-        display.drawTextCentered(display.width() / 2, 64 - 11, "hibernate:" PRESS_LABEL);
+        display.drawTextCentered(display.width() / 2, 64 - 11, UI_HIBERNATE_ACTION);
       }
     }
     return _page == HomePage::CLOCK ? 1000 : 5000;
@@ -641,7 +654,7 @@ public:
       _compose_presets = false;
       _page = (_page + 1) % HomePage::Count;
       if (_page == HomePage::RECENT) {
-        _task->showAlert("Recent adverts", 800);
+        _task->showAlert(UI_TEXT(RECENT_ADVERTS, "Recent adverts"), 800);
       }
       return true;
     }
@@ -655,15 +668,15 @@ public:
       } else {
         _task->enableBluetooth();
       }
-      _task->showAlert(_task->isBluetoothEnabled() ? "Bluetooth On" : "Bluetooth Off", 800);
+      _task->showAlert(_task->isBluetoothEnabled() ? UI_TEXT(BLUETOOTH_ON, "Bluetooth On") : UI_TEXT(BLUETOOTH_OFF, "Bluetooth Off"), 800);
       return true;
     }
     if (c == KEY_ENTER && _page == HomePage::ADVERT) {
       _task->notify(UIEventType::ack);
       if (the_mesh.advert()) {
-        _task->showAlert("Advert sent!", 1000);
+        _task->showAlert(UI_TEXT(ADVERT_SENT, "Advert sent!"), 1000);
       } else {
-        _task->showAlert("Advert failed..", 1000);
+        _task->showAlert(UI_TEXT(ADVERT_FAILED, "Advert failed.."), 1000);
       }
       return true;
     }
@@ -712,16 +725,22 @@ class VirtualKeyboardScreen : public UIScreen {
 
   UITask* _task;
   char _text[121];
+#ifdef GAT562_CH_UI
   char _pinyin[24];
   char* _candidates;
+#endif
   uint8_t _len;
+#ifdef GAT562_CH_UI
   uint8_t _pinyinLen;
   uint8_t _candidateOffset;
+#endif
   uint8_t _row;
   uint8_t _col;
   uint8_t _presetIdx;
   uint8_t _mode;
+#ifdef GAT562_CH_UI
   bool _ime;
+#endif
 #ifdef GAT562_T9_KEYBOARD
   uint8_t _lastT9Group;
   uint32_t _lastT9Millis;
@@ -771,7 +790,11 @@ class VirtualKeyboardScreen : public UIScreen {
   const char* actionLabel(uint8_t row) {
     if (row == 0) return "DEL";
     if (row == 1) return "OK";
+#ifdef GAT562_CH_UI
     if (row == 2) return _ime ? "EN" : "CN";
+#else
+    if (row == 2) return "CLR";
+#endif
     return "ESC";
   }
 
@@ -783,6 +806,7 @@ class VirtualKeyboardScreen : public UIScreen {
     return label;
   }
 
+#ifdef GAT562_CH_UI
   static uint8_t utf8CharLen(const char* str) {
     uint8_t c = (uint8_t) str[0];
     if (c < 0x80) return 1;
@@ -791,6 +815,7 @@ class VirtualKeyboardScreen : public UIScreen {
     if ((c & 0xF8) == 0xF0) return 4;
     return 1;
   }
+#endif
 
   void move(int drow, int dcol) {
     _row = (_row + ROWS + drow) % ROWS;
@@ -799,7 +824,7 @@ class VirtualKeyboardScreen : public UIScreen {
 
   void appendBytes(const char* src, uint8_t count) {
     if (_len + count >= sizeof(_text)) {
-      _task->showAlert("Message full", 700);
+      _task->showAlert(UI_TEXT(MESSAGE_FULL, "Message full"), 700);
       return;
     }
     memcpy(&_text[_len], src, count);
@@ -819,6 +844,7 @@ class VirtualKeyboardScreen : public UIScreen {
     _text[_len] = 0;
   }
 
+#ifdef GAT562_CH_UI
   uint8_t candidateCount() {
     uint8_t count = 0;
     if (!_candidates) return 0;
@@ -859,7 +885,7 @@ class VirtualKeyboardScreen : public UIScreen {
 
   void addPinyin(char c) {
     if (_pinyinLen >= sizeof(_pinyin) - 1) {
-      _task->showAlert("Pinyin full", 700);
+      _task->showAlert(UI_TEXT(PINYIN_FULL, "Pinyin full"), 700);
       return;
     }
     _pinyin[_pinyinLen++] = c;
@@ -871,7 +897,7 @@ class VirtualKeyboardScreen : public UIScreen {
   void selectCandidate(uint8_t index) {
     const char* p = candidateAt(index);
     if (!p) {
-      _task->showAlert("No match", 700);
+      _task->showAlert(UI_TEXT(NO_MATCH, "No match"), 700);
       return;
     }
     appendBytes(p, utf8CharLen(p));
@@ -883,10 +909,15 @@ class VirtualKeyboardScreen : public UIScreen {
     if (count == 0) return;
     _candidateOffset = (_candidateOffset + 9 >= count) ? 0 : (_candidateOffset + 9);
   }
+#endif
 
   void deleteOne() {
+#ifdef GAT562_CH_UI
     if (_pinyinLen > 0) pinyinBackspace();
     else backspace();
+#else
+    backspace();
+#endif
 #ifdef GAT562_T9_KEYBOARD
     resetT9Cycle();
 #endif
@@ -896,12 +927,13 @@ class VirtualKeyboardScreen : public UIScreen {
     if (_mode == MODE_PRESET_EDIT) {
       _task->savePresetMessage(_presetIdx, _text);
     } else if (_len == 0) {
-      _task->showAlert("Empty message", 700);
+      _task->showAlert(UI_TEXT(EMPTY_MESSAGE, "Empty message"), 700);
     } else {
       _task->sendComposedPublicText(_text);
     }
   }
 
+#ifdef GAT562_CH_UI
   void toggleIme() {
     clearPinyin();
     _ime = !_ime;
@@ -909,17 +941,31 @@ class VirtualKeyboardScreen : public UIScreen {
     resetT9Cycle();
 #endif
   }
+#else
+  void clearText() {
+    _len = 0;
+    _text[0] = 0;
+#ifdef GAT562_T9_KEYBOARD
+    resetT9Cycle();
+#endif
+  }
+#endif
 
 #ifdef GAT562_T9_KEYBOARD
   void handleT9Character(char c) {
     const uint8_t group = t9GroupForChar(c);
     const uint32_t now = millis();
     if (group != 0 && group == _lastT9Group && _lastT9Inserted && now - _lastT9Millis < 850) {
+#ifdef GAT562_CH_UI
       if (_pinyinLen > 0) pinyinBackspace();
       else backspace();
+#else
+      backspace();
+#endif
     }
 
     bool inserted = false;
+#ifdef GAT562_CH_UI
     if (_ime && c >= 'A' && c <= 'Z') c = c - 'A' + 'a';
 
     if (_ime && c >= '2' && c <= '9') {
@@ -937,6 +983,11 @@ class VirtualKeyboardScreen : public UIScreen {
       append(c);
       inserted = _len > oldLen;
     }
+#else
+    const uint8_t oldLen = _len;
+    append(c);
+    inserted = _len > oldLen;
+#endif
 
     _lastT9Group = group;
     _lastT9Millis = now;
@@ -945,6 +996,7 @@ class VirtualKeyboardScreen : public UIScreen {
 #endif
 
   void activateLongKey() {
+#ifdef GAT562_CH_UI
     if (_ime && _pinyinLen > 0 && _col < 9) {
       selectCandidate(_candidateOffset + _col);
       return;
@@ -961,6 +1013,12 @@ class VirtualKeyboardScreen : public UIScreen {
       toggleIme();
       return;
     }
+#else
+    if (_col == COLS - 1 && _row == 2) {
+      clearText();
+      return;
+    }
+#endif
     activateKey();
   }
 
@@ -968,7 +1026,13 @@ class VirtualKeyboardScreen : public UIScreen {
     if (_col == COLS - 1) {
       if (_row == 0) deleteOne();
       else if (_row == 1) sendOrSelect();
-      else if (_row == 2) toggleIme();
+      else if (_row == 2) {
+#ifdef GAT562_CH_UI
+        toggleIme();
+#else
+        clearText();
+#endif
+      }
       else {
         _task->gotoHomeScreen();
       }
@@ -976,6 +1040,7 @@ class VirtualKeyboardScreen : public UIScreen {
     }
 
     char key = keyAt(_row, _col);
+#ifdef GAT562_CH_UI
     if (_ime && key >= 'a' && key <= 'z') {
       addPinyin(key);
       return;
@@ -992,9 +1057,11 @@ class VirtualKeyboardScreen : public UIScreen {
       selectCandidate(_candidateOffset);
       return;
     }
+#endif
     append(key);
   }
 
+#ifdef GAT562_CH_UI
   void buildImeLine(char* dest, size_t len) {
     if (!_ime) {
       strncpy(dest, "EN", len);
@@ -1060,20 +1127,43 @@ class VirtualKeyboardScreen : public UIScreen {
       display.print(">");
     }
   }
+#else
+  void renderImeLine(DisplayDriver& display) {
+    display.setTextSize(1);
+    display.setColor(UIColor::secondary_txt);
+    display.setCursor(0, 13);
+    display.print("EN");
+  }
+#endif
 
 public:
-  VirtualKeyboardScreen(UITask* task) : _task(task), _candidates(NULL), _len(0), _pinyinLen(0), _candidateOffset(0), _row(0), _col(0), _presetIdx(0), _mode(MODE_SEND), _ime(false)
+  VirtualKeyboardScreen(UITask* task) : _task(task)
+#ifdef GAT562_CH_UI
+    , _candidates(NULL)
+#endif
+    , _len(0)
+#ifdef GAT562_CH_UI
+    , _pinyinLen(0), _candidateOffset(0)
+#endif
+    , _row(0), _col(0), _presetIdx(0), _mode(MODE_SEND)
+#ifdef GAT562_CH_UI
+    , _ime(false)
+#endif
 #ifdef GAT562_T9_KEYBOARD
     , _lastT9Group(0), _lastT9Millis(0), _lastT9Inserted(false)
 #endif
   {
     _text[0] = 0;
+#ifdef GAT562_CH_UI
     _pinyin[0] = 0;
+#endif
   }
 
   void reset(const char* initial = NULL, bool preset_edit = false, uint8_t preset_idx = 0) {
     _len = 0;
+#ifdef GAT562_CH_UI
     clearPinyin();
+#endif
     _row = 0;
     _col = 0;
     _mode = preset_edit ? MODE_PRESET_EDIT : MODE_SEND;
@@ -1096,16 +1186,26 @@ public:
     display.setTextSize(1);
     display.setColor(UIColor::secondary_txt);
     display.setCursor(0, 0);
-    display.print(_mode == MODE_PRESET_EDIT ? "Set:" : "Msg:");
+    display.print(_mode == MODE_PRESET_EDIT ? UI_TEXT(SET_PREFIX, "Set:") : UI_TEXT(MESSAGE_PREFIX, "Msg:"));
 
     display.setColor(UIColor::primary_txt);
+#ifdef GAT562_CH_UI
+    display.setCursor(34, 3);
+#else
     display.setCursor(27, 3);
+#endif
     char visible[24];
     const uint8_t max_visible = sizeof(visible) - 1;
     uint8_t start = (_len > max_visible) ? (_len - max_visible) : 0;
     while (start < _len && (((uint8_t) _text[start] & 0xC0) == 0x80)) start++;
     strncpy(visible, &_text[start], max_visible);
     visible[max_visible] = 0;
+#ifdef GAT562_CH_UI
+    uint8_t visible_len = strlen(visible);
+    while (visible_len > 0 && start + visible_len < _len && (((uint8_t)_text[start + visible_len] & 0xC0) == 0x80)) {
+      visible[--visible_len] = 0;
+    }
+#endif
     display.print(visible);
 
     renderImeLine(display);
@@ -1192,8 +1292,12 @@ public:
     }
     if (c == KEY_CANCEL) {
 #ifdef GAT562_T9_KEYBOARD
+#ifdef GAT562_CH_UI
       if (t9_keyboard.isAvailable()) toggleIme();
       else _task->gotoHomeScreen();
+#else
+      _task->gotoHomeScreen();
+#endif
 #else
       _task->gotoHomeScreen();
 #endif
@@ -1316,7 +1420,7 @@ public:
     display.setCursor(0, 0);
     display.setTextSize(1);
     display.setColor(UIColor::corp_blue);
-    sprintf(tmp, "Unread: %d", num_unread);
+    sprintf(tmp, UI_TEXT(UNREAD_FORMAT, "Unread: %d"), num_unread);
     display.print(tmp);
 
     auto p = currentEntry();
@@ -1324,11 +1428,11 @@ public:
 
     int secs = _rtc->getCurrentTime() - p->timestamp;
     if (secs < 60) {
-      sprintf(tmp, "%ds", secs);
+      sprintf(tmp, UI_TEXT(SECONDS_FORMAT, "%ds"), secs);
     } else if (secs < 60*60) {
-      sprintf(tmp, "%dm", secs / 60);
+      sprintf(tmp, UI_TEXT(MINUTES_FORMAT, "%dm"), secs / 60);
     } else {
-      sprintf(tmp, "%dh", secs / (60*60));
+      sprintf(tmp, UI_TEXT(HOURS_FORMAT, "%dh"), secs / (60*60));
     }
     display.setCursor(display.width() - display.getTextWidth(tmp) - 2, 0);
     display.print(tmp);
@@ -1385,15 +1489,22 @@ static uint8_t utf8PresetSafeLen(const char* str, uint8_t max_len) {
 }
 
 void UITask::loadPresetMessages() {
+#ifdef GAT562_CH_UI
+  const char* const* default_presets = GAT562CHUI::DEFAULT_PRESET_MESSAGES;
+  const uint8_t default_preset_count = sizeof(GAT562CHUI::DEFAULT_PRESET_MESSAGES) / sizeof(GAT562CHUI::DEFAULT_PRESET_MESSAGES[0]);
+#else
   static const char* DEFAULT_PRESETS[] = {
     "OK",
     "Roger",
     "On my way",
     "Need help"
   };
+  const char* const* default_presets = DEFAULT_PRESETS;
+  const uint8_t default_preset_count = sizeof(DEFAULT_PRESETS) / sizeof(DEFAULT_PRESETS[0]);
+#endif
 
   for (uint8_t i = 0; i < UI_PRESET_MSG_COUNT; i++) {
-    const char* text = (i < sizeof(DEFAULT_PRESETS) / sizeof(DEFAULT_PRESETS[0])) ? DEFAULT_PRESETS[i] : "";
+    const char* text = (i < default_preset_count) ? default_presets[i] : "";
     strncpy(_preset_msgs[i], text, UI_PRESET_MSG_BYTES);
     _preset_msgs[i][UI_PRESET_MSG_BYTES] = 0;
   }
@@ -1507,7 +1618,7 @@ void UITask::begin(DisplayDriver* display, SensorManager* sensors, NodePrefs* no
 void UITask::openMsgPreview() {
   MsgPreviewScreen* preview = (MsgPreviewScreen *) msg_preview;
   if (!preview->hasHistory()) {
-    showAlert("No messages", 800);
+    showAlert(UI_TEXT(NO_MESSAGES, "No messages"), 800);
     return;
   }
   preview->showLatest();
@@ -1528,9 +1639,9 @@ void UITask::openPresetEditor(uint8_t idx) {
 void UITask::sendComposedPublicText(const char* text) {
   if (the_mesh.sendPublicText(text)) {
     notify(UIEventType::ack);
-    showAlert("Sent to Public", 1000);
+    showAlert(UI_TEXT(SENT_PUBLIC, "Sent to Public"), 1000);
   } else {
-    showAlert("Send failed", 1000);
+    showAlert(UI_TEXT(SEND_FAILED, "Send failed"), 1000);
   }
   gotoHomeScreen();
 }
@@ -1538,7 +1649,7 @@ void UITask::sendComposedPublicText(const char* text) {
 void UITask::sendPresetPublicText(uint8_t idx) {
   if (idx >= UI_PRESET_MSG_COUNT) idx = 0;
   if (_preset_msgs[idx][0] == 0) {
-    showAlert("Hold to edit", 900);
+    showAlert(UI_TEXT(HOLD_EDIT, "Hold to edit"), 900);
     return;
   }
   sendComposedPublicText(_preset_msgs[idx]);
@@ -1551,9 +1662,9 @@ void UITask::savePresetMessage(uint8_t idx, const char* text) {
   _preset_msgs[idx][len] = 0;
   if (persistPresetMessages()) {
     notify(UIEventType::ack);
-    showAlert("Preset saved", 1000);
+    showAlert(UI_TEXT(PRESET_SAVED, "Preset saved"), 1000);
   } else {
-    showAlert("Save failed", 1000);
+    showAlert(UI_TEXT(SAVE_FAILED, "Save failed"), 1000);
   }
   gotoHomeScreen();
 }
@@ -1933,8 +2044,8 @@ void UITask::loop() {
           _display->startFrame();
           _display->setTextSize(2);
           _display->setColor(UIColor::warning_txt);
-          _display->drawTextCentered(_display->width() / 2, 20, "Low Battery.");
-          _display->drawTextCentered(_display->width() / 2, 40, "Shutting Down!");
+          _display->drawTextCentered(_display->width() / 2, 20, UI_TEXT(LOW_BATTERY, "Low Battery."));
+          _display->drawTextCentered(_display->width() / 2, 40, UI_TEXT(SHUTTING_DOWN, "Shutting Down!"));
           _display->endFrame();
           if (_display->isEink() == false) { delay(3000); }
         }
@@ -2009,7 +2120,7 @@ void UITask::toggleGPS() {
           notify(UIEventType::ack);
         }
         the_mesh.savePrefs();
-        showAlert(_node_prefs->gps_enabled ? "GPS: Enabled" : "GPS: Disabled", 800);
+        showAlert(_node_prefs->gps_enabled ? UI_TEXT(GPS_ENABLED, "GPS: Enabled") : UI_TEXT(GPS_DISABLED, "GPS: Disabled"), 800);
         _next_refresh = 0;
         handled = true;
         break;
@@ -2019,7 +2130,7 @@ void UITask::toggleGPS() {
   if (!handled) {
     _node_prefs->gps_enabled = _node_prefs->gps_enabled ? 0 : 1;
     the_mesh.savePrefs();
-    showAlert(_node_prefs->gps_enabled ? "GPS: Enabled" : "GPS: Disabled", 800);
+    showAlert(_node_prefs->gps_enabled ? UI_TEXT(GPS_ENABLED, "GPS: Enabled") : UI_TEXT(GPS_DISABLED, "GPS: Disabled"), 800);
     _next_refresh = 0;
   }
 }
@@ -2035,7 +2146,7 @@ void UITask::toggleBuzzer() {
     }
     _node_prefs->buzzer_quiet = buzzer.isQuiet();
     the_mesh.savePrefs();
-    showAlert(buzzer.isQuiet() ? "Buzzer: OFF" : "Buzzer: ON", 800);
+    showAlert(buzzer.isQuiet() ? UI_TEXT(BUZZER_OFF, "Buzzer: OFF") : UI_TEXT(BUZZER_ON, "Buzzer: ON"), 800);
     _next_refresh = 0;  // trigger refresh
   #endif
 }
