@@ -86,6 +86,9 @@ public:
 */
 class RTCClock {
   uint32_t last_unique;
+#ifdef GAT562_CH_UI
+  bool _time_synchronized = false;
+#endif
 protected:
   RTCClock() { last_unique = 0; }
 
@@ -99,6 +102,10 @@ public:
    * \param time  current time in UNIX epoch seconds.
   */
   virtual void setCurrentTime(uint32_t time) = 0;
+#ifdef GAT562_CH_UI
+  void markTimeSynchronized() { _time_synchronized = true; }
+  bool isTimeSynchronized() const { return _time_synchronized; }
+#endif
 
   /**
    * override in classes that need to periodically update internal state

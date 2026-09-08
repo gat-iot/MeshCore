@@ -21,6 +21,9 @@
 
 #include "../AbstractUITask.h"
 #include "../NodePrefs.h"
+#ifdef GAT562_CH_UI
+#include "GAT562Alarm.h"
+#endif
 
 #define UI_PRESET_MSG_COUNT 20
 #define UI_PRESET_MSG_BYTES 40
@@ -81,6 +84,16 @@ class UITask : public AbstractUITask {
   int handleTripleClick(int c);
 
   void setCurrScreen(UIScreen* c);
+#ifdef GAT562_CH_UI
+  GAT562Alarm::Settings _alarms, _alarm_draft;
+  bool _alarm_editing = false, _alarm_quiet = false, _alarm_armed = false;
+  uint8_t _alarm_slot = 0, _alarm_field = 0, _alarm_ringing = 0, _alarm_snoozed = 0;
+  uint32_t _alarm_started = 0, _alarm_snooze_at = 0, _alarm_refresh = 0;
+  void loadAlarms();
+  bool saveAlarms(const GAT562Alarm::Settings& settings);
+  bool pollAlarms();
+  void stopAlarm(bool snooze);
+#endif
 
 public:
 
@@ -90,6 +103,11 @@ public:
     curr = NULL;
   }
   void begin(DisplayDriver* display, SensorManager* sensors, NodePrefs* node_prefs);
+#ifdef GAT562_CH_UI
+  void openAlarms();
+  uint8_t alarmTimezone() const { return _alarms.timezone; }
+  bool setAlarmTimezone(uint8_t index);
+#endif
 
   void gotoHomeScreen() { setCurrScreen(home); }
   void openMsgPreview();

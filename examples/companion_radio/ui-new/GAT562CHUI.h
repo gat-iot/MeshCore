@@ -61,6 +61,18 @@ static const char SECONDS_FORMAT[] = "%d秒";
 static const char MINUTES_FORMAT[] = "%d分";
 static const char HOURS_FORMAT[] = "%d时";
 
+static const char ALARM[] = "闹钟";
+static const char ALARM_SAVED[] = "闹钟已保存";
+static const char ALARM_OPEN[] = "按确认设置闹钟";
+static const char ALARM_READY[] = "时间已同步";
+static const char ALARM_WAIT[] = "等待APP或GPS校时";
+static const char ALARM_SAVE[] = "确认保存 返回取消";
+static const char ALARM_STOP[] = "确认或返回:停止";
+static const char ALARM_SNOOZE[] = "上键:延后5分钟";
+static const char ALARM_ENABLED[] = "开启";
+static const char ALARM_DISABLED[] = "关闭";
+static const char* const ALARM_REPEAT[] = { "单次", "每天", "工作日" };
+
 static const char* const DEFAULT_PRESET_MESSAGES[] = {
   "收到",
   "明白",
