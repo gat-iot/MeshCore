@@ -26,7 +26,7 @@ class SSD1306Display : public DisplayDriver {
 
   bool i2c_probe(TwoWire& wire, uint8_t addr);
   uint16_t nextCodepoint(const char*& str);
-#ifdef GAT562_CH_UI
+#if defined(GAT562_CH_UI) || defined(GAT562_TW_UI)
   int findGlyph(uint16_t codepoint);
   void drawGlyph(int x, int y, uint16_t codepoint);
 #endif

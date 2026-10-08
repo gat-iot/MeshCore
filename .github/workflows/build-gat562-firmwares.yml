@@ -32,6 +32,11 @@ jobs:
             environment: GAT562_Mesh_Tracker_Pro_T9_CH_companion_radio_ble
             t9: true
             ch: true
+          - model: MeshCore_GAT562_T9_TW
+            environment: GAT562_Mesh_Tracker_Pro_T9_TW_companion_radio_ble
+            t9: true
+            ch: false
+            tw: true
 
     name: ${{ matrix.model }}
 
@@ -49,6 +54,18 @@ jobs:
       - name: Setup build environment
         uses: ./.github/actions/setup-build-environment
 
+      - name: Test T9 input modes
+        shell: bash
+        run: |
+          set -euo pipefail
+          for mode in EN CH TW; do
+            flags=()
+            if [[ "$mode" == CH ]]; then flags+=(-DGAT562_CH_UI=1); fi
+            if [[ "$mode" == TW ]]; then flags+=(-DGAT562_TW_UI=1 -DZHUYIN_SINGLE_CHAR=1); fi
+            g++ -std=c++17 -Wall -Wextra -fsanitize=address,undefined -Ibin/tests/ime_stubs "${flags[@]}" bin/tests/test_gat562_input.cpp -o /tmp/test_gat562_input
+            /tmp/test_gat562_input
+          done
+
       - name: Build firmware
         run: pio run -e "${{ matrix.environment }}"
 
@@ -58,6 +75,7 @@ jobs:
           MODEL: ${{ matrix.model }}
           T9_ENABLED: ${{ matrix.t9 }}
           CH_ENABLED: ${{ matrix.ch }}
+          TW_ENABLED: ${{ matrix.tw }}
         shell: bash
         run: |
           set -euo pipefail
@@ -95,6 +113,7 @@ jobs:
 
           if [[ "${T9_ENABLED}" == "true" ]]; then
             require_symbol "GAT562T9Keyboard::poll"
+            require_symbol "GAT562T9Editor::handleInput"
           elif grep -Fq "GAT562T9Keyboard::poll" "${symbols}"; then
             echo "Unexpected T9 keyboard code in family firmware"
             exit 1
@@ -103,6 +122,10 @@ jobs:
           if [[ "${CH_ENABLED}" == "true" ]]; then
             require_symbol "pinyin_simple_search"
             require_symbol "utf8_10x10_map"
+          elif [[ "${TW_ENABLED}" == "true" ]]; then
+            require_symbol "BPMF_CAND_DATA"
+            require_symbol "utf8_10x10_map"
+            if grep -Fq "pinyin_simple_search" "${symbols}"; then exit 1; fi
           elif grep -Eq "pinyin_simple_search|utf8_10x10_map" "${symbols}"; then
             echo "Unexpected Chinese UI code in non-CH firmware"
             exit 1

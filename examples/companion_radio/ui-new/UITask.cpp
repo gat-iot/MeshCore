@@ -1337,6 +1337,10 @@ public:
   }
 };
 
+#ifdef GAT562_T9_KEYBOARD
+#include "GAT562T9Editor.h"
+#endif
+
 class MsgPreviewScreen : public UIScreen {
   UITask* _task;
   mesh::RTCClock* _rtc;
@@ -1644,7 +1648,11 @@ void UITask::begin(DisplayDriver* display, SensorManager* sensors, NodePrefs* no
   splash = new SplashScreen(this);
   home = new HomeScreen(this, &rtc_clock, sensors, node_prefs);
   msg_preview = new MsgPreviewScreen(this, &rtc_clock);
+#ifdef GAT562_T9_KEYBOARD
+  composer = new GAT562T9Editor(this);
+#else
   composer = new VirtualKeyboardScreen(this);
+#endif
   setCurrScreen(splash);
 }
 
@@ -1659,13 +1667,21 @@ void UITask::openMsgPreview() {
 }
 
 void UITask::openComposer() {
+#ifdef GAT562_T9_KEYBOARD
+  ((GAT562T9Editor *) composer)->reset();
+#else
   ((VirtualKeyboardScreen *) composer)->reset();
+#endif
   setCurrScreen(composer);
 }
 
 void UITask::openPresetEditor(uint8_t idx) {
   if (idx >= UI_PRESET_MSG_COUNT) idx = 0;
+#ifdef GAT562_T9_KEYBOARD
+  ((GAT562T9Editor *) composer)->reset(_preset_msgs[idx], true, idx);
+#else
   ((VirtualKeyboardScreen *) composer)->reset(_preset_msgs[idx], true, idx);
+#endif
   setCurrScreen(composer);
 }
 

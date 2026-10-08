@@ -1,5 +1,7 @@
 #include "SSD1306Display.h"
-#ifdef GAT562_CH_UI
+#ifdef GAT562_TW_UI
+  #include "traditional_chinese_utf8_10x10.h"
+#elif defined(GAT562_CH_UI)
   #include "utf8_10x10.h"
 #endif
 
@@ -100,7 +102,7 @@ uint16_t SSD1306Display::nextCodepoint(const char*& str) {
   return '?';
 }
 
-#ifdef GAT562_CH_UI
+#if defined(GAT562_CH_UI) || defined(GAT562_TW_UI)
 int SSD1306Display::findGlyph(uint16_t codepoint) {
   int lo = 0;
   int hi = utf8_10x10_font.count - 1;
@@ -139,7 +141,7 @@ void SSD1306Display::drawGlyph(int x, int y, uint16_t codepoint) {
 #endif
 
 void SSD1306Display::print(const char* str) {
-#ifdef GAT562_CH_UI
+#if defined(GAT562_CH_UI) || defined(GAT562_TW_UI)
   while (*str) {
     const char* before = str;
     uint16_t cp = nextCodepoint(str);
@@ -168,7 +170,7 @@ void SSD1306Display::print(const char* str) {
 void SSD1306Display::printWordWrap(const char* str, int max_width) {
   int line_start_x = _cursorX;
   while (*str) {
-#ifdef GAT562_CH_UI
+#if defined(GAT562_CH_UI) || defined(GAT562_TW_UI)
     const char* p = str;
     uint16_t cp = nextCodepoint(p);
     int char_w = (cp < 0x80) ? (6 * _textSize) : utf8_10x10_font.w;
@@ -219,7 +221,7 @@ void SSD1306Display::drawNativeBuffer(const uint8_t* buffer, size_t length) {
 }
 
 uint16_t SSD1306Display::getTextWidth(const char* str) {
-#ifdef GAT562_CH_UI
+#if defined(GAT562_CH_UI) || defined(GAT562_TW_UI)
   uint16_t width = 0;
   while (*str) {
     uint16_t cp = nextCodepoint(str);
