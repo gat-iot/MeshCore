@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://meshcore-dev.github.io/meshcore/number_allocations/">
+        <link rel="canonical" href="https://meshcore-dev.github.io/meshcore/gat562_t9_input/">
       
       
-        <link rel="prev" href="../nrf52_power_management/">
+        <link rel="prev" href="../gat562_ch_alarm/">
       
       
-        <link rel="next" href="../packet_format/">
+        <link rel="next" href="../kiss_modem_protocol/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Number Allocations - MeshCore Docs</title>
+        <title>GAT562 T9 Input - MeshCore Docs</title>
       
     
     
@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#number-allocations" class="md-skip">
+        <a href="#gat562-t9-input" class="md-skip">
           Skip to content
         </a>
       
@@ -105,7 +105,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Number Allocations
+              GAT562 T9 Input
             
           </span>
         </div>
@@ -385,10 +385,19 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../gat562_t9_input/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -404,6 +413,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -466,19 +476,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../number_allocations/" class="md-nav__link">
         
   
   
@@ -494,7 +495,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -669,7 +669,7 @@
 
 
   
-    <a href="https://github.com/meshcore-dev/meshcore/edit/main/docs/number_allocations.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/meshcore-dev/meshcore/edit/main/docs/gat562_t9_input.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -677,55 +677,22 @@
   
 
 
-<h1 id="number-allocations">Number Allocations</h1>
-<p>This document lists unique numbers/identifiers used in various MeshCore protocol payloads.</p>
-<h1 id="group-data-types">Group Data Types</h1>
-<p>The <code>PAYLOAD_TYPE_GRP_DATA</code> payloads have a 16-bit data-type field, which identifies which application the packet is for.</p>
-<p>To make sure multiple applications can function without interfering with each other, the table below is for reserving various ranges of data-type values. Just modify this table, adding a row, then submit a PR to have it authorised/merged.</p>
-<p>NOTE: the range FF00 - FFFF is for use while you're developing, doing POC, and for these you don't need to request to use/allocate.</p>
-<p>Once you have a working app/project, you need to be able to demonstrate it exists/works, and THEN request type IDs. So, just use the testing/dev range while developing, then request IDs before you transition to publishing your project.</p>
-<table>
-<thead>
-<tr>
-<th>Data-Type range</th>
-<th>App name</th>
-<th>Contact</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>0000 - 00FF</td>
-<td>-reserved for internal use-</td>
-<td></td>
-</tr>
-<tr>
-<td>0100</td>
-<td>MeshCore Open</td>
-<td>zsylvester@monitormx.com — https://github.com/zjs81/meshcore-open</td>
-</tr>
-<tr>
-<td>0110 - 011F</td>
-<td>Ripple</td>
-<td>ripple_biz@protonmail.com — https://buymeacoffee.com/ripplebiz</td>
-</tr>
-<tr>
-<td>0120</td>
-<td>MCO Advanced</td>
-<td>most.original.address@gmail.com — https://hdden.ru/MCOa/</td>
-</tr>
-<tr>
-<td>0130 - 013F</td>
-<td>StreamSensor</td>
-<td>william@housedillon.com - https://housedillon.com/blog/lora-e5-with-seeed-fusion</td>
-</tr>
-<tr>
-<td>FF00 - FFFF</td>
-<td>-reserved for testing/dev-</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-<p>(add rows, inside the range 0100 - FEFF for custom apps)</p>
+<h1 id="gat562-t9-input">GAT562 T9 Input</h1>
+<p>The T9 EN, CH and new TW builds use a physical-keyboard-only editor. Family builds retain their existing on-screen keyboard. No radio, USB, BLE, alarm or message-routing settings are changed by the input port.</p>
+<ul>
+<li>Pressing a T9 key outside the editor opens it and consumes that first key, as before.</li>
+<li>CH uses pinyin with a bounded common-word prediction table; USER switches CN/EN. It starts in EN, matching the existing CH editor.</li>
+<li>EN retains lower/uppercase/digit multi-tap cycling and does not include a Chinese font or dictionary.</li>
+<li>TW uses the supplied Bopomofo engine and traditional font; USER switches TW/EN. It starts in TW. Existing non-editor menus remain English.</li>
+<li>TW digit positions in the multi-tap cycle enter the mapped Bopomofo symbol/tone instead of being suppressed as pinyin digits. <code>#</code> maps to the semicolon symbol (U+3124) absent from the physical keypad. Space enters the neutral tone while composing.</li>
+<li>Up/left selects the previous candidate; down/right selects the next. The underline covers the selected word. Paging uses the actual displayed widths in both directions.</li>
+<li>Short confirm commits a candidate. Predictions display and append only the continuation, without duplicating the preceding character. Selecting or navigating ends the previous multi-tap cycle.</li>
+<li>Long confirm sends the committed text, or saves a preset. An unfinished composition must be selected or deleted before sending.</li>
+<li>DEL deletes one composition symbol or committed UTF-8 character. Long DEL exits without sending.</li>
+<li>Message size remains 120 UTF-8 bytes; preset editing is limited to 40 bytes. A candidate that does not fit is not partially inserted.</li>
+</ul>
+<p>The new TW environment inherits the current CH radio defaults (480.375 MHz, SF10, BW62.5, CR5, 17 dBm), but does not change any settings already saved on the device. EN retains its existing defaults. Source dictionaries and font notices are retained.</p>
+<p>Host tests exercise the actual editor state model, real prediction and Bopomofo dictionaries, mixed-length candidate paging, UTF-8 bounds and multi-tap reset. Pinyin character lookup is stubbed in host tests; the firmware links the existing pinyin library. All five build variants must pass USB and keyboard/language isolation checks. Real-device input, display, USB and BLE tests remain required.</p>
 
 
 
