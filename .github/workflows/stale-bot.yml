@@ -1,7 +1,5 @@
 name: 'Run Stale Bot'
 on:
-  schedule:
-    - cron: '30 1 * * *' # daily at 1:30am
   workflow_dispatch: {}
 
 permissions:
